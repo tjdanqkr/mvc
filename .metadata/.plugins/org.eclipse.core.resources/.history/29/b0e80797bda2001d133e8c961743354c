@@ -1,0 +1,5 @@
+package io.playdata.board.service;
+
+public class UserServiceImpl {
+
+}

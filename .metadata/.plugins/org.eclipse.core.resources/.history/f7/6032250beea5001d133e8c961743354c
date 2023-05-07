@@ -1,0 +1,158 @@
+package io.playdata.board.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import io.playdata.board.HomeController;
+import io.playdata.board.dto.BoardDTO;
+import io.playdata.board.dto.UserDTO;
+import io.playdata.board.service.BoardServiceImpl;
+
+@Controller
+public class BoardController {
+	
+	private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
+	
+	@Autowired
+	private BoardServiceImpl boardService;
+	
+	
+	@RequestMapping(value="/board/home", method = RequestMethod.GET)
+	public ModelAndView home(
+			) {
+		// TODO : 전체 가져오는 거
+		
+		List<BoardDTO> allBoards = boardService.findAll();
+		
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("/board/home");
+		mav.addObject("boards", allBoards);
+		
+		return mav;
+	}
+	@RequestMapping(value="/board/create", method = RequestMethod.GET)
+	public String create() {
+		return "/board/create";
+	}
+	@RequestMapping(value="/board/create", method = RequestMethod.POST)
+	public ModelAndView createPost(
+			@RequestParam("title") String title,
+			@RequestParam("content") String content,
+			HttpServletRequest req
+//			@RequestParam("userName") String userName
+			) {
+		String userName = (String) req.getSession().getAttribute("userName");
+		BoardDTO dto = new BoardDTO(title, content, userName);
+		int insertRows = boardService.insert(dto);
+		ModelAndView mav = new ModelAndView();
+		if(insertRows==0) {
+			mav.setViewName("redirect:/board/create");
+		}else {
+			mav.setViewName("redirect:/board/home");
+		}
+		return mav;
+	}
+	@RequestMapping(value="/board/detail", method = RequestMethod.GET)
+	public ModelAndView detail(
+			@RequestParam(required = false, value = "boardId") Integer id
+			) {
+		ModelAndView mav = new ModelAndView();
+		try {
+			BoardDTO board = boardService.findOneById(id);
+			mav.addObject("title", board.getTitle());
+			mav.addObject("content", board.getContent());
+			mav.addObject("createDate", board.getCreateDate());
+			mav.addObject("userName", board.getUserName());
+			mav.addObject("id", board.getId());
+			mav.addObject("board", board);
+			mav.setViewName("/board/detail");
+		}catch(NullPointerException e){
+			mav.setViewName("redirect:/board/home");
+//			mav.setViewName("/board/detail");
+		}
+		return mav;
+	}
+	@RequestMapping(value="/board/delete", method = RequestMethod.GET)
+	public ModelAndView delete(@RequestParam("boardId") Integer id) {
+		
+		ModelAndView mav = new ModelAndView();
+		try {
+			Integer deleteRows = boardService.deleteById(id);
+			if(deleteRows==0) {
+				throw new NullPointerException("no Contents");
+			}
+			mav.setViewName("redirect:/board/home");
+		}catch (Exception e) {
+			mav.setViewName("redirect:/board/detail?boardId="+id);
+		}
+		
+		return mav;
+	}
+	// TODO : update , login , 조회수
+//	@RequestMapping(value="/board/update", method=RequestMethod.GET)
+//	public ModelAndView getUpdate(
+//			@RequestParam("boardId") Integer id,
+//			@RequestParam("title") String title
+//			) {
+//		ModelAndView mav = new ModelAndView();
+//		mav.setViewName("/board/update");
+//		mav.addObject("id",id);
+//		mav.addObject("title",title);
+//		return mav;
+//	}
+//	
+//	@RequestMapping(value="/board/update", method=RequestMethod.POST)
+//	public ModelAndView postUpdate(
+//			@RequestParam("boardId") Integer id,
+//			@RequestParam("title") String title
+//			) {
+//		logger.info("id : {}, title : {}", id, title);
+//		ModelAndView mav = new ModelAndView();
+//		mav.setViewName("redirect:/board/update");
+//		mav.addObject("boardId",id);
+//		mav.addObject("title",title);
+//		return mav;
+//	}
+	
+	@RequestMapping(value="/board/update", method=RequestMethod.GET)
+	public ModelAndView getUpdate(
+			@RequestParam("boardId") Integer id
+			) {
+		BoardDTO boardDTO = new BoardDTO();
+		ModelAndView mav = new ModelAndView();
+		BoardDTO dto = boardService.findOneById(id);
+		mav.setViewName("/board/update");
+		mav.addObject("board",dto);
+		return mav;
+	}
+	
+	@RequestMapping(value="/board/update", method=RequestMethod.POST)
+	public ModelAndView postUpdate(
+			@ModelAttribute BoardDTO modelDTO
+//			@RequestParam("boardId") Integer id
+			) {
+		logger.info(modelDTO.toString());
+		ModelAndView mav = new ModelAndView();
+		if(boardService.updateById(modelDTO) == 0) {
+			mav.setViewName("redirect:/board/update");
+		}else {
+			mav.setViewName("redirect:/board/detail");
+		}
+		mav.addObject("boardId",modelDTO.getId());
+		return mav;
+	}
+	
+}

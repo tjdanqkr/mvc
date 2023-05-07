@@ -1,0 +1,5 @@
+package io.playdata.board.dto;
+
+public class UserDTO {
+
+}

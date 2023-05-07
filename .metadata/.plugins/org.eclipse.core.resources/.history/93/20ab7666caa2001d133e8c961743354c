@@ -1,0 +1,10 @@
+package io.playdata.board.exception;
+
+public class ErrorCode {
+	private String E_000001 = "찾는 유저가 없음";
+
+	public String getE_000001() {
+		return E_000001;
+	}
+
+}

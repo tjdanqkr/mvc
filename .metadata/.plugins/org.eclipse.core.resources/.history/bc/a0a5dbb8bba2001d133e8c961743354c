@@ -1,0 +1,5 @@
+package io.playdata.board.repository;
+
+public class UserRepository {
+
+}
